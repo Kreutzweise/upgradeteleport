@@ -35,30 +35,14 @@ restart_and_check_teleport() {
     fi
 }
 
-# Function to download, extract, and install Teleport
+# Function to run install command with or without sudo
 run_install_command() {
-    local target_version="$1"
-    local binary_url="https://get.gravitational.com/teleport-v${target_version}-linux-amd64-bin.tar.gz"
-    
-    echo "Downloading Teleport binary for v${target_version} from ${binary_url}..."
-    curl -LO "$binary_url"
-    if [[ $? -ne 0 ]]; then
-        echo "Error: Failed to download Teleport binary for v${target_version}."
-        exit 1
-    fi
-
-    echo "Extracting Teleport binary..."
-    tar -xzf "teleport-v${target_version}-linux-amd64-bin.tar.gz"
-    
-    echo "Installing Teleport..."
+    local install_command="$1"
     if command -v sudo &> /dev/null; then
-        sudo mv teleport /usr/local/bin/
+        eval "$install_command"
     else
-        mv teleport /usr/local/bin/
+        eval "${install_command/sudo /}"  # Remove sudo if it's not available
     fi
-    
-    echo "Cleaning up..."
-    rm -rf teleport-v${target_version}-linux-amd64-bin.tar.gz teleport
 }
 
 # Function to prompt the user for restart
@@ -113,6 +97,7 @@ if [[ -z "$current_version" ]]; then
 fi
 
 echo "Current Teleport version: $current_version"
+
 while true; do
     # Extract the major version
     current_major=$(echo "$current_version" | cut -d '.' -f 1)
@@ -130,7 +115,9 @@ while true; do
     echo "Latest version for v$next_major: $latest_next_version"
 
     # Upgrade Teleport
-    run_install_command "$latest_next_version"
+    upgrade_command="curl https://cdn.teleport.dev/install-v${current_version}.sh | bash -s ${latest_next_version} oss"
+    echo "Executing: $upgrade_command"
+    run_install_command "$upgrade_command"
 
     # Prompt the user for a restart
     prompt_restart
