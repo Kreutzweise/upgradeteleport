@@ -35,15 +35,30 @@ restart_and_check_teleport() {
     fi
 }
 
-# Function to run install command with or without sudo
+# Function to download, extract, and install Teleport
 run_install_command() {
     local target_version="$1"
-    local install_command="curl -s https://cdn.teleport.dev/teleport-install.sh | bash -s ${target_version} oss"
-    if command -v sudo &> /dev/null; then
-        eval "$install_command"
-    else
-        eval "${install_command/sudo /}"  # Remove sudo if it's not available
+    local binary_url="https://get.gravitational.com/teleport-v${target_version}-linux-amd64-bin.tar.gz"
+    
+    echo "Downloading Teleport binary for v${target_version} from ${binary_url}..."
+    curl -LO "$binary_url"
+    if [[ $? -ne 0 ]]; then
+        echo "Error: Failed to download Teleport binary for v${target_version}."
+        exit 1
     fi
+
+    echo "Extracting Teleport binary..."
+    tar -xzf "teleport-v${target_version}-linux-amd64-bin.tar.gz"
+    
+    echo "Installing Teleport..."
+    if command -v sudo &> /dev/null; then
+        sudo mv teleport /usr/local/bin/
+    else
+        mv teleport /usr/local/bin/
+    fi
+    
+    echo "Cleaning up..."
+    rm -rf teleport-v${target_version}-linux-amd64-bin.tar.gz teleport
 }
 
 # Function to prompt the user for restart
