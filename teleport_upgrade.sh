@@ -37,7 +37,8 @@ restart_and_check_teleport() {
 
 # Function to run install command with or without sudo
 run_install_command() {
-    local install_command="$1"
+    local target_version="$1"
+    local install_command="curl -s https://cdn.teleport.dev/teleport-install.sh | bash -s ${target_version} oss"
     if command -v sudo &> /dev/null; then
         eval "$install_command"
     else
@@ -115,9 +116,7 @@ while true; do
     echo "Latest version for v$next_major: $latest_next_version"
 
     # Upgrade Teleport
-    upgrade_command="curl https://cdn.teleport.dev/install-v${current_version}.sh | bash -s ${latest_next_version} oss"
-    echo "Executing: $upgrade_command"
-    run_install_command "$upgrade_command"
+    run_install_command "$latest_next_version"
 
     # Prompt the user for a restart
     prompt_restart
