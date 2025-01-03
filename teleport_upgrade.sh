@@ -18,30 +18,12 @@ get_latest_version_for_major() {
 
 # Function to restart Teleport and check if it's running correctly
 restart_and_check_teleport() {
-    if command -v sudo &> /dev/null; then
-        sudo systemctl restart teleport
-    else
-        systemctl restart teleport
-    fi
+    sudo systemctl restart teleport
     sleep 10  # Wait for 10 seconds to allow the service to stabilize
-    if command -v sudo &> /dev/null; then
-        sudo systemctl is-active --quiet teleport
-    else
-        systemctl is-active --quiet teleport
-    fi
+    sudo systemctl is-active --quiet teleport
     if [[ $? -ne 0 ]]; then
         echo "Error: Teleport service failed to start. Check logs for details."
         exit 1
-    fi
-}
-
-# Function to run install command with or without sudo
-run_install_command() {
-    local install_command="$1"
-    if command -v sudo &> /dev/null; then
-        eval "$install_command"
-    else
-        eval "${install_command/sudo /}"  # Remove sudo if it's not available
     fi
 }
 
@@ -117,7 +99,7 @@ while true; do
     # Upgrade Teleport
     upgrade_command="curl https://cdn.teleport.dev/install-v${current_version}.sh | bash -s ${latest_next_version} oss"
     echo "Executing: $upgrade_command"
-    run_install_command "$upgrade_command"
+    eval "$upgrade_command"
 
     # Prompt the user for a restart
     prompt_restart
