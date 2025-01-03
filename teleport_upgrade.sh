@@ -113,7 +113,6 @@ if [[ -z "$current_version" ]]; then
 fi
 
 echo "Current Teleport version: $current_version"
-
 while true; do
     # Extract the major version
     current_major=$(echo "$current_version" | cut -d '.' -f 1)
