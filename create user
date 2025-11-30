@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ANSIBLE_USER="ansible"
+ANSIBLE_HOME="/home/${ANSIBLE_USER}"
+ANSIBLE_SHELL="/bin/bash"
+ANSIBLE_SUDOERS="/etc/sudoers.d/${ANSIBLE_USER}"
+
+if [[ "$(id -u)" -ne 0 ]]; then
+  echo "Please run this script as root (sudo)."
+  exit 1
+fi
+
+echo "[*] Ensuring user '${ANSIBLE_USER}' exists..."
+if id -u "${ANSIBLE_USER}" >/dev/null 2>&1; then
+  echo "    User already exists."
+else
+  useradd -m -s "${ANSIBLE_SHELL}" "${ANSIBLE_USER}"
+  echo "    User created with home ${ANSIBLE_HOME}."
+fi
+
+echo "[*] Locking local password for ${ANSIBLE_USER} (Teleport-only login)..."
+passwd -l "${ANSIBLE_USER}" >/dev/null 2>&1 || true
+usermod -p '!*' "${ANSIBLE_USER}" >/dev/null 2>&1 || true
+
+echo "[*] Configuring passwordless sudo for ${ANSIBLE_USER}..."
+echo "${ANSIBLE_USER} ALL=(ALL) NOPASSWD:ALL" > "${ANSIBLE_SUDOERS}"
+chmod 440 "${ANSIBLE_SUDOERS}"
+
+# Optional: sanity check sudoers syntax
+if command -v visudo >/dev/null 2>&1; then
+  visudo -cf /etc/sudoers >/dev/null && echo "[*] sudoers syntax OK."
+fi
+
+echo "[✓] Setup complete."
+echo "Teleport can now log in as '${ANSIBLE_USER}', and this user can run sudo without a password."
